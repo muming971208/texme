@@ -181,4 +181,116 @@ describe('tokenize', function () {
     var expected = [[MARK, l1], [MASK, l2], [MARK, l3], [MASK, l4]]
     assert.deepStrictEqual(texme.tokenize(l1 + l2 + l3 + l4), expected)
   })
+
+  it('dollar in unprotected inline code', function () {
+    var input = '`foo = $bar` hello $ 1 + 1 = 2 $'
+    var expected = [
+      [MARK, '`foo = '],
+      [MASK, '$bar` hello $'],
+      [MARK, ' 1 + 1 = 2 $']
+    ]
+    assert.deepStrictEqual(texme.tokenize(input), expected)
+  })
+
+  it('double dollars in unprotected inline code', function () {
+    var input = '`foo = $$bar` hello $$ 1 + 1 = 2 $$'
+    var expected = [
+      [MARK, '`foo = '],
+      [MASK, '$$bar` hello $$'],
+      [MARK, ' 1 + 1 = 2 $$']
+    ]
+    assert.deepStrictEqual(texme.tokenize(input), expected)
+  })
+
+  it('dollar in unprotected code block', function () {
+    var input = [
+      '```',
+      'foo = $bar',
+      '```',
+      'hello',
+      '$ 1 + 1 = 2 $'
+    ].join('\n')
+    var expected = [
+      [MARK, '```\nfoo = '],
+      [MASK, '$bar\n```\nhello\n$'],
+      [MARK, ' 1 + 1 = 2 $']
+    ]
+    assert.deepStrictEqual(texme.tokenize(input), expected)
+  })
+
+  it('double dollars in unprotected code block', function () {
+    var input = [
+      '```',
+      'foo = $$bar',
+      '```',
+      'hello',
+      '$$',
+      '1 + 1 = 2',
+      '$$'
+    ].join('\n')
+    var expected = [
+      [MARK, '```\nfoo = '],
+      [MASK, '$$bar\n```\nhello\n$$'],
+      [MARK, '\n1 + 1 = 2\n$$']
+    ]
+    assert.deepStrictEqual(texme.tokenize(input), expected)
+  })
+
+  it('dollar in protected inline code', function () {
+    var input = '\\begin{code}`foo = $bar`\\end{code} hello $ 1 + 1 = 2 $'
+    var expected = [
+      [MARK, '`foo = $bar`'],
+      [MARK, ' hello '],
+      [MASK, '$ 1 + 1 = 2 $']
+    ]
+    assert.deepStrictEqual(texme.tokenize(input), expected)
+  })
+
+  it('double dollars in protected inline code', function () {
+    var input = '\\begin{code}`foo = $$bar`\\end{code} hello $$ 1 + 1 = 2 $$'
+    var expected = [
+      [MARK, '`foo = $$bar`'],
+      [MARK, ' hello '],
+      [MASK, '$$ 1 + 1 = 2 $$']
+    ]
+    assert.deepStrictEqual(texme.tokenize(input), expected)
+  })
+
+  it('dollar in protected code block', function () {
+    var input = [
+      '\\begin{code}',
+      '```',
+      'foo = $bar',
+      '```',
+      '\\end{code}',
+      'hello',
+      '$ 1 + 1 = 2 $'
+    ].join('\n')
+    var expected = [
+      [MARK, '\n```\nfoo = $bar\n```\n'],
+      [MARK, '\nhello\n'],
+      [MASK, '$ 1 + 1 = 2 $']
+    ]
+    assert.deepStrictEqual(texme.tokenize(input), expected)
+  })
+
+  it('double dollars in protected code block', function () {
+    var input = [
+      '\\begin{code}',
+      '```',
+      'foo = $$bar',
+      '```',
+      '\\end{code}',
+      'hello',
+      '$$',
+      '1 + 1 = 2',
+      '$$'
+    ].join('\n')
+    var expected = [
+      [MARK, '\n```\nfoo = $$bar\n```\n'],
+      [MARK, '\nhello\n'],
+      [MASK, '$$\n1 + 1 = 2\n$$']
+    ]
+    assert.deepStrictEqual(texme.tokenize(input), expected)
+  })
 })

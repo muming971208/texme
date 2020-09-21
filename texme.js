@@ -241,6 +241,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    */
   texme.tokenize = function (s) {
     var pattern = [
+      '\\\\begin{code}[\\s\\S]*?\\\\end{code}', // \begin{code}..\end{code}
       '\\\\begin{.*}[\\s\\S]*?\\\\end{.*}', // \begin{..}..\end{..}
       '\\\\\\[[\\s\\S]*?\\\\\\]', // \[..\]
       '\\\\\\([\\s\\S]*?\\\\\\)', // \(..\)
@@ -255,6 +256,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     var markdownText
     var tokens = []
     var nextIndex = 0
+    var beginCodeLen = '\\begin{code}'.length
+    var endCodeLen = '\\end{code}'.length
 
     while ((result = re.exec(s)) !== null) {
       // Markdown text
@@ -262,8 +265,16 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         markdownText = s.substring(nextIndex, result.index)
         tokens.push([texme.tokenType.MARK, markdownText])
       }
-      // Masked text (LaTeX or mask-literal)
-      tokens.push([texme.tokenType.MASK, result[0]])
+
+      if (result[0].startsWith('\\begin{code}')) {
+        // Code environment
+        markdownText =
+          result[0].substring(beginCodeLen, (result[0].length - endCodeLen))
+        tokens.push([texme.tokenType.MARK, markdownText])
+      } else {
+        // Masked text (LaTeX or mask-literal)
+        tokens.push([texme.tokenType.MASK, result[0]])
+      }
       // Start of next Markdown text
       nextIndex = re.lastIndex
     }
